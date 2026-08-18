@@ -10,8 +10,7 @@ validation check.
 3. Run BLS to search for periodic transit signals
 4. Fold at best period, compare to published parameters
 
-## Status
-🚧 Week 1-2 in progress — data pipeline + BLS search working on Kepler-10b
+
 
 ## Setup
 \`\`\`bash
