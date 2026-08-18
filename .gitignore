@@ -1,0 +1,19 @@
+# Data & cache
+data/
+*.fits
+lightkurve-cache/
+mastDownload/
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+*.pdf

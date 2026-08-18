@@ -1,0 +1,19 @@
+# Exoplanet Transit Detection
+
+Detects transiting exoplanets in Kepler/TESS light curves using the
+Box Least Squares (BLS) algorithm, recovering known planets as a
+validation check.
+
+## Method
+1. Download light curve data via `lightkurve` (MAST)
+2. Clean & flatten to remove stellar variability
+3. Run BLS to search for periodic transit signals
+4. Fold at best period, compare to published parameters
+
+## Status
+🚧 Week 1-2 in progress — data pipeline + BLS search working on Kepler-10b
+
+## Setup
+\`\`\`bash
+pip install -r requirements.txt
+\`\`\`
