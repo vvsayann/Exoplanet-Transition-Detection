@@ -14,8 +14,7 @@ FIGURE_DIR = "figures"
 
 
 def download_light_curve(target_name, mission):
-
-    search_result = lk.search_lightcurve(target_name, mission=mission)
+    search_result = lk.search_lightcurve(target_name, mission=mission, exptime=1800)
     print(search_result)
     lc = search_result[0].download()
     return lc
