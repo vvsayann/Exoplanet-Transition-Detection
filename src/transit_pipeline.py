@@ -1,16 +1,24 @@
 #made on 26-08-2026 by ayann
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import lightkurve as lk
 
-TARGET_NAME = "Kepler-10"
 MISSION = "Kepler"
 FLATTEN_WINDOW = 401
-BLS_PERIOD_RANGE = np.arange(0.5, 2.0, 0.0005)
-PUBLISHED_PERIOD_DAYS = 0.837
 
 FIGURE_DIR = "figures"
+
+
+TARGETS = [
+    {"name": "Kepler-10", "period_range": np.arange(0.5, 2.0, 0.0005),
+     "published_period": 0.837, "star_radius_solar": 1.065},
+    {"name": "Kepler-8", "period_range": np.arange(3.4, 3.6, 0.0002),
+     "published_period": 3.523, "star_radius_solar": 1.486},
+    {"name": "Kepler-7", "period_range": np.arange(4.7, 5.0, 0.0002),
+     "published_period": 4.886, "star_radius_solar": 1.966},
+]
 
 
 def download_light_curve(target_name, mission):
@@ -20,7 +28,7 @@ def download_light_curve(target_name, mission):
     return lc
 
 
-def clean_and_flatten(lc, window_length=FLATTEN_WINDOW):
+def clean_and_flatten(lc, window_length=FLATTEN_WINDOW, save_prefix=""):
     lc_clean = lc.remove_nans().remove_outliers(sigma=5)
     lc_flat = lc_clean.flatten(window_length=window_length)
 
@@ -30,18 +38,18 @@ def clean_and_flatten(lc, window_length=FLATTEN_WINDOW):
     lc_flat.plot(ax=axes[1])
     axes[1].set_title("After flattening")
     plt.tight_layout()
-    plt.savefig(f"{FIGURE_DIR}/before_after_flatten.png", dpi=150)
+    plt.savefig(f"{FIGURE_DIR}/{save_prefix}before_after_flatten.png", dpi=150)
     plt.show()
 
     return lc_flat
 
 
-def run_bls_search(lc_flat, period_range=BLS_PERIOD_RANGE):
+def run_bls_search(lc_flat, period_range, save_prefix=""):
     periodogram = lc_flat.to_periodogram(
         method="bls", period=period_range, frequency_factor=500
     )
     periodogram.plot()
-    plt.savefig(f"{FIGURE_DIR}/bls_periodogram.png", dpi=150)
+    plt.savefig(f"{FIGURE_DIR}/{save_prefix}bls_periodogram.png", dpi=150)
     plt.show()
 
     best_period = periodogram.period_at_max_power
@@ -55,16 +63,17 @@ def run_bls_search(lc_flat, period_range=BLS_PERIOD_RANGE):
     return best_period, best_t0, best_duration
 
 
-def fold_and_verify(lc_flat, best_period, best_t0, published_period=None):
+def fold_and_verify(lc_flat, best_period, best_t0, published_period=None, save_prefix=""):
     folded = lc_flat.fold(period=best_period, epoch_time=best_t0)
 
     folded.plot()
-    plt.savefig(f"{FIGURE_DIR}/folded_transit.png", dpi=150)
+    plt.savefig(f"{FIGURE_DIR}/{save_prefix}folded_transit.png", dpi=150)
     plt.show()
 
     folded.scatter()
     plt.xlim(-0.1, 0.1)
     plt.title("Zoomed near transit (phase 0)")
+    plt.savefig(f"{FIGURE_DIR}/{save_prefix}folded_transit_zoom.png", dpi=150)
     plt.show()
 
     if published_period is not None:
@@ -77,11 +86,59 @@ def fold_and_verify(lc_flat, best_period, best_t0, published_period=None):
     return folded
 
 
+
+def estimate_planet_radius(folded, star_radius_solar):
+    """Estimate planet radius from transit depth: depth = (R_planet/R_star)^2."""
+    in_transit = folded.flux[np.abs(folded.phase.value) < 0.02]
+    depth = 1.0 - np.nanmin(in_transit.value)
+
+    planet_radius_solar = star_radius_solar * np.sqrt(depth)
+    planet_radius_earth = planet_radius_solar * 109.2
+
+    print(f"Transit depth: {depth:.6f} ({depth * 1e6:.1f} ppm)")
+    print(f"Estimated planet radius: {planet_radius_earth:.2f} Earth radii")
+
+    return planet_radius_earth
+
+
+def run_full_pipeline(target_name, mission, period_range,
+                       published_period=None, star_radius_solar=None,
+                       flatten_window=FLATTEN_WINDOW):
+
+    print(f"\n{'=' * 50}\nRunning pipeline for: {target_name}\n{'=' * 50}")
+    save_prefix = f"{target_name.replace(' ', '_')}_"
+
+    lc = download_light_curve(target_name, mission)
+    lc_flat = clean_and_flatten(lc, window_length=flatten_window, save_prefix=save_prefix)
+    best_period, best_t0, best_duration = run_bls_search(lc_flat, period_range, save_prefix=save_prefix)
+    folded = fold_and_verify(lc_flat, best_period, best_t0, published_period, save_prefix=save_prefix)
+
+    radius = None
+    if star_radius_solar is not None:
+        radius = estimate_planet_radius(folded, star_radius_solar)
+
+    return {
+        "target": target_name,
+        "period": best_period.value,
+        "duration": best_duration.value,
+        "radius_earth": radius,
+    }
+
+
 if __name__ == "__main__":
-    import os
     os.makedirs(FIGURE_DIR, exist_ok=True)
 
-    lc = download_light_curve(TARGET_NAME, MISSION)
-    lc_flat = clean_and_flatten(lc)
-    best_period, best_t0, best_duration = run_bls_search(lc_flat)
-    folded = fold_and_verify(lc_flat, best_period, best_t0, PUBLISHED_PERIOD_DAYS)
+    results = []
+    for t in TARGETS:
+        result = run_full_pipeline(
+            t["name"],
+            MISSION,
+            t["period_range"],
+            published_period=t["published_period"],
+            star_radius_solar=t["star_radius_solar"],
+        )
+        results.append(result)
+
+    print(f"\n{'=' * 50}\nSummary\n{'=' * 50}")
+    for r in results:
+        print(r)
