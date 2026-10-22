@@ -2,3 +2,10 @@ lightkurve
 astropy
 numpy
 matplotlib
+scipy
+pandas
+astroquery
+batman-package
+emcee
+corner
+setuptools
