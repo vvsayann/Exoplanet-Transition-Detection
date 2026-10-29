@@ -11,6 +11,8 @@ mastDownload/
 __pycache__/
 *.pyc
 .venv/
+.venv-etd/
+.idea/
 venv/
 
 # OS
