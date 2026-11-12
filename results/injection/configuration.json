@@ -1,0 +1,7 @@
+{
+  "seed": 42,
+  "repeats": 3,
+  "stellar_radius": 1.0,
+  "stellar_mass": 1.0,
+  "caveat": "Conditional on selected stars and fixed impact 0.3; injections before detrending."
+}
