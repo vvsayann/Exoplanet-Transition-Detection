@@ -19,3 +19,13 @@ venv/
 .DS_Store
 
 *.pdf
+
+tmp/
+results/demo/
+results/progress_check/
+results/real_smoke/
+src/figures/before_after_flatten.png
+src/figures/bls_periodogram.png
+src/figures/folded_transit.png
+*.npz
+posterior.npy
