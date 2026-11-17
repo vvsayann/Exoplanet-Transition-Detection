@@ -16,11 +16,14 @@ def main():
         if command == 'run':
             p.add_argument('target'); p.add_argument('--mission', choices=['Kepler','TESS'], default='Kepler')
             p.add_argument('--stellar-radius', type=float); p.add_argument('--stellar-radius-error', type=float, default=0.)
+            p.add_argument('--stellar-density', type=float, help='Host density in g/cm³')
+            p.add_argument('--secondary-depth-max', type=float, help='Independent upper bound on fractional occultation depth')
         if command == 'batch':
             p.add_argument('manifest')
         p.add_argument('--output', default=f'results/{command}')
         p.add_argument('--no-fit', action='store_true')
         p.add_argument('--steps', type=int, default=1500); p.add_argument('--burn', type=int, default=500)
+        p.add_argument('--differential-evolution', action='store_true', help='Use emcee differential-evolution moves')
         p.add_argument('--max-period', type=float, default=50.); p.add_argument('--max-segments', type=int, default=4)
     p = sub.add_parser('catalog'); p.add_argument('table', choices=['pscomppars','cumulative','toi']); p.add_argument('--output', default='data/catalog.csv')
     p = sub.add_parser('compare'); p.add_argument('results'); p.add_argument('catalog'); p.add_argument('--output', default='results/comparison.csv')

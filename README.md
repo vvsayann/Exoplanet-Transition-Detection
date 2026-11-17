@@ -39,6 +39,9 @@ The radius arguments above illustrate usage; retrieve and cite appropriate stell
 .\.venv-etd\Scripts\python.exe scripts/research.py
 # Offline completeness demonstration
 .\.venv-etd\Scripts\python.exe -m src inject synthetic --repeats 5
+# Injection recovery on two inspected Kepler baselines, 20 trials per bin for each star
+.\.venv-etd\Scripts\python.exe -m scripts.quiet_injections 6106415
+.\.venv-etd\Scripts\python.exe -m scripts.quiet_injections 6603624
 ```
 
 For real completeness, call `src.experiments.injection_recovery` with original downloaded segments from inspected quiet stars. The `inject path/to/lightcurve.npz` convenience command uses an already detrended baseline, so it measures conditional search completeness and does not measure the full detrending loss. Set stellar mass/radius to measured values in the Python API. Archive runs need working MAST and NASA archive access and can be lengthy. All failed batch targets are recorded in `failures.json`; inspect coverage before interpreting tables. The blind manifest is an identifier sample, not a guaranteed observed or unbiased survey sample.
@@ -49,9 +52,9 @@ Each segment is quality-filtered, normalized, clipped upward only, and flattened
 
 Fitting uses exposure-integrated batman models, bounded least squares, then emcee. Parameters are period, epoch, radius ratio, scaled semimajor axis, impact parameter, and flux offset. Reported 16/50/84 percentiles are conditional on circular orbits, fixed quadratic limb darkening (0.3, 0.2), bounded uniform priors, and independent Gaussian errors. Radius conversion propagates supplied stellar radius uncertainty. Check convergence diagnostics and extend chains; short chains do not establish reliable credible intervals. Strong correlated noise, grazing geometry, and uncertain stellar properties require more sophisticated modeling.
 
-Vetting returns odd/even depth differences, phase-0.5 secondary significance, per-event depth consistency, a heuristic shape flag, and a circular-density duration check when density is supplied. `null` means unassessed, and `incomplete` remains explicit. Flags are screening heuristics, not calibrated false-positive probabilities. Dilution, centroid motion, eccentric binaries, and stellar activity can evade these tests. Unmatched signals are candidates requiring further evidence, never discoveries.
+Vetting returns odd/even and per-event depth consistency with an empirical error floor, phase-0.5 secondary significance, a heuristic shape flag, and a circular duration check with stellar density. The known-target manifest supplies host densities and a published occultation bound for WASP-18. Supply these for individual targets with `--stellar-density` in g/cm³ and `--secondary-depth-max` as a fractional depth. Missing diagnostics remain `null` and set the `incomplete` flag. The flags are screening heuristics. Unmatched signals require independent vetting.
 
-Injection trials record exact-period/epoch recovery separately from harmonics, with a recovery heatmap and Wilson 95% binomial intervals. Sensitivity depends on selected stars, noise, radius/mass assumptions, phase, fixed impact parameter, and search settings. Synthetic success cannot establish real-star completeness or reliability. KOI evaluation reports both false-positive recall and planet retention, including requested/matched counts; catalogs and failed downloads can bias coverage.
+Injection trials record exact period/epoch recovery and harmonics, with a recovery heatmap and Wilson 95% binomial intervals. Sensitivity depends on selected stars, noise, radius/mass assumptions, phase, impact parameter and search settings. When the label file supplies `catalog_period`, KOI evaluation requires period agreement within 1% and reports requested, analyzed and matched counts by class alongside recall and retention.
 
 ## Reproduction and deliverables
 

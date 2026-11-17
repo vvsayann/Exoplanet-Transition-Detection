@@ -18,10 +18,24 @@ def save_json(path, obj):
     Path(path).write_text(json.dumps(obj, indent=2, allow_nan=False), encoding='utf-8')
 
 
+def search_transits(curves, duration, min_period, max_period, status=None):
+    """Search twice so the final detrending pass protects candidate transits."""
+    _, flat = clean_and_flatten(curves, duration)
+    if status is not None:
+        status(f'First BLS search on {len(flat):,} cleaned cadences...')
+    candidate, _ = search(flat, min_period, max_period)
+    if status is not None:
+        status('Protecting detected transits and repeating detrending and BLS...')
+    ephemeris = (candidate['period'], candidate['t0'], candidate['duration'] * 1.5)
+    raw, flat = clean_and_flatten(curves, duration, ephemeris)
+    candidate, power = search(flat, min_period, max_period)
+    return raw, flat, candidate, power
+
+
 def run_pipeline(target_id, mission='Kepler', output='results', curves=None, duration=.15,
                  min_period=.5, max_period=50., max_segments=4, fit=True, steps=1500,
                  burn=500, stellar_radius=None, stellar_radius_error=0., stellar_density=None,
-                 seed=42, multiple=True):
+                 seed=42, multiple=True, secondary_depth_max=None, differential_evolution=False):
     folder = Path(output) / ''.join(c if c.isalnum() or c in '-_' else '_' for c in str(target_id))
     folder.mkdir(parents=True, exist_ok=True)
     def status(message):
@@ -30,14 +44,7 @@ def run_pipeline(target_id, mission='Kepler', output='results', curves=None, dur
         status('Finding and loading archive light curves (cached files are reused)...')
         curves = download_light_curve(target_id, mission, max_segments=max_segments)
     status(f'Loaded {len(curves)} segments. Cleaning and detrending...')
-    raw, flat = clean_and_flatten(curves, duration)
-    status(f'First BLS search on {len(flat):,} cleaned cadences...')
-    candidate, _ = search(flat, min_period, max_period)
-    status('Protecting detected transits and repeating detrending and BLS...')
-    # Refit the trend while protecting the first-pass transit ephemeris.
-    raw, flat = clean_and_flatten(curves, duration,
-        (candidate['period'], candidate['t0'], candidate['duration']*1.5))
-    candidate, power = search(flat, min_period, max_period)
+    raw, flat, candidate, power = search_transits(curves, duration, min_period, max_period, status)
     status(f'Primary period: {candidate["period"]:.8f} days. Vetting and searching for additional signals...')
     result = dict(target=str(target_id), mission=mission, **candidate)
     result['created_utc'] = datetime.now(timezone.utc).isoformat()
@@ -45,10 +52,11 @@ def run_pipeline(target_id, mission='Kepler', output='results', curves=None, dur
         filename=str(c.meta.get('FILENAME', 'in-memory')), cadences=len(c),
         start=float(c.time.value.min()), stop=float(c.time.value.max()), time_format=c.time.format)
         for c in curves]
-    result['vetting'] = vet(flat, candidate, stellar_density)
+    result['vetting'] = vet(flat, candidate, stellar_density, secondary_depth_max)
     result['signals'] = search_multiple(flat, min_period=min_period, max_period=max_period) if multiple else [candidate]
     result['configuration'] = dict(duration=duration, min_period=min_period, max_period=max_period,
-                                   max_segments=max_segments, seed=seed)
+                                   max_segments=max_segments, seed=seed, stellar_radius=stellar_radius,
+                                   stellar_radius_error=stellar_radius_error)
     result['versions'] = {name: version(name) for name in ['numpy','astropy','lightkurve','scipy']}
     result['versions']['python'] = platform.python_version()
     fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
@@ -70,7 +78,8 @@ def run_pipeline(target_id, mission='Kepler', output='results', curves=None, dur
         import corner
         status('Starting physical parameter fitting...')
         summary, samples = fit_transit(flat, candidate, steps=steps, burn=burn, seed=seed,
-            stellar_radius=stellar_radius, stellar_radius_error=stellar_radius_error, progress=True)
+            stellar_radius=stellar_radius, stellar_radius_error=stellar_radius_error, progress=True,
+            differential_evolution=differential_evolution)
         result['fit'] = summary
         np.save(folder/'posterior.npy', samples)
         status('Saving fitted model and corner plot...')

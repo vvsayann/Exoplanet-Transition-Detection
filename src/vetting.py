@@ -4,13 +4,18 @@ from scipy.stats import chi2
 from .preprocess import transit_mask
 
 
-def vet(lc, c, stellar_density=None):
+def vet(lc, c, stellar_density=None, secondary_depth_max=None):
     t, y, e = lc.time.value, lc.flux.value, lc.flux_err.value
     p, t0, d = (c[k] for k in ['period', 't0', 'duration'])
     phase = (t-t0+p/2) % p-p/2
     inside = abs(phase) < d/2
     outside = abs(phase) > d
     baseline = np.median(y[outside]) if outside.any() else 1.
+    # Per-event box depths can shift with correlated baseline noise and
+    # uneven sampling of ingress and egress, even at high formal SNR.
+    noise_floor = 1.4826 * np.median(abs(y[outside] - baseline)) if outside.any() else 0.
+    event_floor = np.hypot(noise_floor, .05 * c['depth'])
+
     def depth(mask):
         if mask.sum() < 3:
             return None
@@ -19,10 +24,32 @@ def vet(lc, c, stellar_density=None):
     epoch = np.round((t-t0)/p).astype(int)
     odd, even = depth(inside & (epoch % 2 == 1)), depth(inside & (epoch % 2 == 0))
     z = None if odd is None or even is None else abs(odd[0]-even[0])/np.hypot(odd[1], even[1])
+    if secondary_depth_max is not None and not (np.isfinite(secondary_depth_max) and secondary_depth_max >= 0):
+        raise ValueError('secondary_depth_max must be finite and nonnegative')
     secondary = depth(transit_mask(t, p, t0+p/2, d))
     secondary_z = None if secondary is None else secondary[0]/secondary[1]
-    depths = [depth(inside & (epoch == k)) for k in np.unique(epoch[inside])]
-    depths = [v for v in depths if v is not None]
+    secondary_excess_z = secondary_z
+    if secondary is not None and secondary_depth_max is not None:
+        secondary_excess_z = (secondary[0] - secondary_depth_max) / secondary[1]
+    events = []
+    for k in np.unique(epoch[inside]):
+        measurement = depth(inside & (epoch == k))
+        if measurement is not None:
+            value, error = measurement
+            events.append((k % 2, value, float(np.hypot(error, event_floor))))
+
+    parity_depths = []
+    for parity in (0, 1):
+        group = [(value, error) for group_id, value, error in events if group_id == parity]
+        if group:
+            values, errors = np.array(group).T
+            weights = errors**-2
+            parity_depths.append((np.average(values, weights=weights), 1 / np.sqrt(weights.sum())))
+    if len(parity_depths) == 2:
+        (even_value, even_err), (odd_value, odd_err) = parity_depths
+        z = abs(odd_value - even_value) / np.hypot(even_err, odd_err)
+
+    depths = [(value, error) for _, value, error in events]
     consistency_p = None
     if len(depths) >= 3:
         values, errors = np.array(depths).T
@@ -33,15 +60,19 @@ def vet(lc, c, stellar_density=None):
     # Circular central transit upper-duration approximation, density in g/cm^3.
     expected = None
     if stellar_density is not None:
-        if stellar_density <= 0:
-            raise ValueError('stellar_density must be positive')
+        if not (np.isfinite(stellar_density) and stellar_density > 0):
+            raise ValueError('stellar_density must be finite and positive')
         a = (6.6743e-11 * stellar_density*1000 * (p*86400)**2/(3*np.pi))**(1/3)
         expected = float(p/np.pi*np.arcsin(min(1., (1+np.sqrt(c['depth']))/a)))
     metrics = dict(odd_even_sigma=z, secondary_sigma=secondary_z,
+                   secondary_depth=None if secondary is None else secondary[0],
+                   secondary_depth_error=None if secondary is None else secondary[1],
+                   secondary_excess_sigma=secondary_excess_z, secondary_depth_max=secondary_depth_max,
                    depth_consistency_p=consistency_p, edge_core_ratio=shape,
-                   central_duration_days=expected, individual_depths=depths)
+                   stellar_density=stellar_density, central_duration_days=expected,
+                   event_depth_error_floor=float(event_floor), individual_depths=depths)
     flags = dict(odd_even=None if z is None else bool(z < 3),
-                 secondary=None if secondary_z is None else bool(secondary_z < 5),
+                 secondary=None if secondary_excess_z is None else bool(secondary_excess_z < 5),
                  depth_consistency=None if consistency_p is None else bool(consistency_p > .01),
                  shape=None if shape is None else bool(shape > .25),
                  duration=None if expected is None else bool(d < expected*1.5),
