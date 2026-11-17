@@ -1,10 +1,10 @@
 # A reproducible pipeline for detecting and screening exoplanet transits
 
-**Implementation and verification report — 22 October 2026**
+**Implementation and verification report · 17 November 2026**
 
 ## Abstract
 
-This project implements a modular transit detection workflow for Kepler and TESS photometry. It combines systematics-corrected archive light curves, segment-wise cleaning, Box Least Squares (BLS), exposure-integrated physical transit models, ensemble Markov chain Monte Carlo, and candidate screening. Experiment drivers support injection recovery, labeled false-positive evaluation, and searches whose detections are frozen before catalog matching. An offline numerical demonstration recovered an injected 3-day period at 2.99943475 days, an error of approximately 0.019%. A real Kepler-10 smoke test recovered a 0.83771248-day signal. Twenty-seven synthetic injection trials demonstrate how the completeness products are generated. These checks establish useful software behavior, but do not establish survey completeness, catalog-wide reliability, converged parameter uncertainties, or discovery of a new planet. The distinction between implemented capability and completed observational evidence is maintained throughout.
+This project implements a modular transit detection workflow for Kepler and TESS photometry. It combines systematics-corrected archive light curves, segment-wise cleaning, Box Least Squares (BLS), exposure-integrated physical transit models, ensemble Markov chain Monte Carlo, and candidate screening. Three Kepler fits and one TESS fit met the retained-chain convergence criterion. The updated vetting retained all four known planets using measured stellar densities and an independent occultation bound for WASP-18. All 360 injections on two low-variability Kepler baselines met the recovery criteria on the tested grid. The blind search crossmatched 22 targets, and the labeled evaluation scored 11 period matches from 20 targets. The results establish performance on the specified data and models. Survey-level completeness and reliability remain unmeasured.
 
 ## 1. Introduction
 
@@ -38,9 +38,9 @@ Acceptance fraction and autocorrelation diagnostics accompany every fit. A chain
 
 ### 2.4 Candidate screening
 
-The screening module compares odd and even depths, searches for a secondary dip at phase 0.5, compares depths across individual events, and evaluates a heuristic edge-to-core depth ratio. With a supplied stellar density it also compares duration against a circular central-transit estimate. Missing information remains explicitly unassessed rather than being converted into a passing test.
+The screening module compares odd and even depths, searches for a secondary dip at phase 0.5, compares depths across individual events, and evaluates a heuristic edge-to-core depth ratio. A supplied stellar density enables the circular central-transit duration check. An independent upper bound on a planetary occultation can be supplied for a characterized system. The result retains the significance relative to zero and applies the secondary flag to any excess above the bound. Missing diagnostics remain explicitly unassessed.
 
-These diagnostics are deliberately interpretable. They are not a validated false-positive probability model. The depth errors use formal photometric uncertainties and do not fully model uncertainty in the shared baseline or correlated stellar noise. Eccentric binaries can evade a phase-0.5 secondary search. Low signal-to-noise transits can produce unreliable shape ratios. These effects motivate evaluation on labeled samples with both retention and rejection metrics.
+Per-event depth errors combine the formal weighted error, the robust out-of-transit scatter (scaled median absolute deviation), and a 5% box-depth term in quadrature. The last term allows for uneven sampling of ingress and egress. Odd/even comparisons use the resulting event weights when both parities have usable events. These are screening heuristics. Shared baselines, correlated noise and stellar activity can still undermine the nominal significance, so the labeled experiment reports retention and rejection with period-match coverage.
 
 ### 2.5 Evaluation design
 
@@ -50,7 +50,7 @@ Known-target comparisons query the NASA archive and retain published values alon
 
 ## 3. Verified results
 
-Four automated tests passed in the prepared Python 3.12 environment. They check period recovery, posterior production and unconverged-chain labeling, preservation of downward dips during cleaning, rejection of unequal odd/even depths, and rejection of an insufficient baseline.
+Eight automated tests passed in Python 3.12 on Windows. They cover period recovery, posterior production and convergence labeling, the exposure-integrated likelihood, cleaning, eclipse screening, short baselines, and FITS cache integrity. The run is recorded in [test_output.txt](test_output.txt).
 
 The end-to-end synthetic demonstration used a 3-day signal, radius ratio 0.08, a 27-day baseline, and Gaussian noise with amplitude 300 parts per million plus slow variability. BLS returned 2.99943475 days, depth approximately 0.006675, and depth SNR approximately 132. The 300-step posterior run produced the expected artifacts, including a model overlay and corner plot. Its convergence flag is false; its narrow intervals must not be used as validated scientific uncertainties.
 
@@ -64,9 +64,54 @@ The authoritative numeric outputs are the JSON/CSV artifacts under `results/`. A
 
 An additional 18 injections used the first available real segment of KIC 8006161, with provisional solar mass and radius assumptions. At 1 day all three phases recovered in every radius bin. At 3 days the recovery counts were 1/3, 2/3, and 3/3 for 2, 4, and 8 Earth radii respectively. Event coverage, formal errors, stellar properties, and variability must be inspected before treating this as quiet-star completeness; the short baseline does not support a general population claim. These products are saved separately in `results/real_injection/`.
 
+### 3.1 Known targets and depth measurements
+
+Each Kepler fit used two segments and 32 walkers. The initial 10,000-step runs discarded 2,000 steps. Kepler-17 passed the convergence check at that length. Kepler-10 and Kepler-8 had maximum autocorrelation estimates of approximately 417 and 258 steps, both above the 160-step maximum for 8,000 retained samples per walker. The final comparison uses 20,000 steps and 4,000 burn-in for all three and an 80:20 mixture of emcee's differential-evolution and snooker proposals. The saved WASP-18 samples used 10,000 steps, 2,000 burn-in and the stretch move. Its historical convergence correction is recorded beside its result. [emcee proposal moves](https://emcee.readthedocs.io/en/stable/user/moves/)
+
+| Target | BLS period (d) | Published period (d) | Period error | Box / published depth (ppm) | Grid / published duration (h) | Max autocorrelation (steps) | Fit converged |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Kepler-10 b | 0.83771828 | 0.83749070 | 0.02717% | 153.2 / 191.9 | 1.92 / 1.811 | 222.6 | Yes |
+| Kepler-17 b | 1.48574424 | 1.48571080 | 0.00225% | 17,637.9 / 21,801.9 | 1.92 / 2.276 | 56.5 | Yes |
+| Kepler-8 b | 3.52346702 | 3.52249910 | 0.02748% | 7,718.0 / 9,145.7 | 2.88 / 3.191 | 76.4 | Yes |
+| WASP-18 b | 0.94141493 | 0.94145223 | 0.00396% | 9,746.3 / 10,410.0 | 1.92 / 2.210 | 71.0 | Yes |
+
+| Target | Fitted radius ratio (16th–84th percentile errors) | Archive radius ratio (quoted errors) | Relative difference |
+|---|---:|---:|---:|
+| Kepler-10 b | 0.012735 (−0.000165 / +0.000264) | 0.012680 (−0.000040 / +0.000040) | +0.4% |
+| Kepler-17 b | 0.133512 (−0.000055 / +0.000058) | 0.130310 (−0.000180 / +0.000220) | +2.5% |
+| Kepler-8 b | 0.091711 (−0.000668 / +0.000717) | 0.095751 (−0.000230 / +0.000190) | −4.2% |
+| WASP-18 b | 0.097490 (−0.000122 / +0.000124) | 0.101800 (−0.001100 / +0.001100) | −4.2% |
+
+The published values are from the NASA Archive composite table. The comparison file also includes Earth-radius estimates using the stellar radii and uncertainties in the known-target manifest. The archive supplies those inputs for Kepler-10, Kepler-8 and WASP-18. For Kepler-17 the fit uses the discovery paper's stellar radius of 1.02 ± 0.03 solar radii. [Known-target comparison](../results/research/known_comparison.csv) · [NASA Archive composite parameters](https://exoplanetarchive.ipac.caltech.edu/docs/API_PSCompPars_columns.html) · [Kepler-17 discovery paper](https://doi.org/10.1088/0067-0049/197/1/14)
+
+The Kepler BLS depths are 15.6–20.2% below the archive depths. To check for attenuation, the fitted transit was divided out of the original PDCSAP flux. The original and divided light curves were passed through the same detrending mask, and their difference was measured with the original box and cadence weights before and after detrending. The change in that differential depth was below 0.1% for each host. Applying the same box to the exposure-integrated transit model made the depth 14.0–16.7% shallower than the model's central depth and reproduced the measured Kepler BLS depths to within 0.5%. The box measurement therefore accounts for most of the gap on these light curves. The remaining radius-ratio differences for Kepler-17, Kepler-8 and WASP-18 exceed the quoted intervals. The experiment isolates detrending response for the fitted profiles, while the radius-ratio comparisons remain sensitive to model assumptions and the source of the archive parameters. [Depth diagnostic](../results/research/depth_diagnostic.csv)
+
+All four pass the revised vetting, with duration assessed using densities of 1.068, 1.421655, 0.65374 and 0.795 g/cm³ in table order. Their depth-consistency p-values are approximately 0.985, 0.247, 0.983 and 0.836. WASP-18's event-weighted odd/even difference is 1.30σ. Its nominal secondary depth in the flattened light curve is 224 ± 10 ppm (about 21.4σ). On normalized PDCSAP flux, a local quadratic baseline on either side of phase 0.5 gave 333 ± 23 ppm across 45 eclipses. This agrees within the combined uncertainties with the published TESS eclipse of 357 ± 14 ppm. The known-target vetter uses 399 ppm, the published depth plus three quoted standard deviations, as the independent upper bound. [WASP-18 TESS eclipse measurement](https://www.nature.com/articles/s41586-023-06230-1)
+
+### 3.2 Injection recovery on low-variability Kepler photometry
+
+The follow-up used quarter 1 PDCSAP flux from KIC 6106415 and KIC 6603624. Visual inspection found low-amplitude variability and occasional gaps. The normalized robust scatter was 29.3 and 34.9 ppm respectively, falling to 25.1 and 30.4 ppm after detrending. Asteroseismic mass and radius inputs were 1.078 solar masses and 1.213 solar radii for KIC 6106415 and 1.09 solar masses and 1.181 solar radii for KIC 6603624. The strongest uninjected BLS boxes had depths of 39.8 and 17.8 ppm. Rescaling their formal SNRs by the ratio of quoted cadence noise to measured robust scatter gave 5.90 and 5.13. That rescaling was used to inspect the baselines. Recovery used the pipeline's ordinary detection criteria. [KIC 6106415 stellar modeling](https://academic.oup.com/mnras/article/479/4/4416/5043232) · [KIC 6603624 stellar modeling](https://doi.org/10.1088/0067-0049/214/2/27)
+
+For each star, 20 independently drawn epochs were tested in each of nine period–radius bins. Periods were 1, 3 and 7 days, radii were 2, 4 and 8 Earth radii, and the impact parameter was fixed at 0.3. Signals were injected into the original PDCSAP flux before cleaning and both BLS passes. All 360 injections met the period, epoch, SNR and observed-event criteria. The Wilson 95% interval for each star/bin is 0.839–1.000. These estimates apply to the two observed quarters and the specified grid. The raw time-series inspection, inputs, trials and recovery tables are saved in [quiet_injection](../results/research/quiet_injection).
+
+### 3.3 Blind search and crossmatch
+
+The frozen search processed 22 of the 24 listed Kepler targets before the KOI crossmatch. KIC 2694497 and KIC 3112389 had no public Kepler long-cadence light curves in either the MAST search or the public Kepler archive listing. Nineteen of the 22 primary peaks met the nominal SNR and observed-event thresholds. Nine of those agreed within 1% of a published KOI period, comprising five confirmed objects and four catalog false positives. The other ten are unvetted signals, several with best periods near the upper edge of the search. The output includes the [crossmatch](../results/research/blind_crossmatch.csv), [unvetted candidates](../results/research/blind_candidates.csv), and [archive misses](../results/research/blind/failures.json). [MAST Kepler data access](https://archive.stsci.edu/kepler/search_retrieve.html) · [NASA cumulative KOI table](https://exoplanetarchive.ipac.caltech.edu/docs/PurposeOfKOITable.html)
+
+### 3.4 Labeled vetting evaluation
+
+The sample used a fixed-seed draw of ten confirmed planets and ten catalog false positives on single-KOI hosts with published periods from 0.55 to 12 days. The first two available Kepler long-cadence segments were searched without using the catalog period or disposition during detection and vetting. The final evaluation requires the recovered primary period to agree with the labeled period within 1%. Results with aliases or other periods contribute to analysis coverage but carry no label for scoring the vetting of the catalog signal. Stellar density and target-specific occultation estimates were omitted for this sample.
+
+| Catalog class | Requested | Analyzed | Period matched | Correctly classified among matches |
+|---|---:|---:|---:|---:|
+| Confirmed | 10 | 10 | 5 | 5 retained (100%) |
+| False positive | 10 | 10 | 6 | 4 rejected (66.7%) |
+
+Overall period-match coverage was 11/20 (55%). Two matched catalog false positives passed the screening flags. [Label sample](../results/research/labels.csv) · [Evaluation metrics](../results/research/vetting_metrics.json)
+
 ## 4. Discussion and remaining scientific validation
 
-The pipeline now supports the proposed analyses in reusable modules, but implementation completeness differs from completion of a scientific study. Acceptance requires successful runs for several known planets, documented literature comparisons with uncertainties, converged posteriors, and a labeled sample large enough to evaluate rejection without excessive loss of real planets. Completeness needs independently inspected quiet stars, measured stellar properties, more random phases, multiple geometries, and sufficient trials per bin. A blind search needs completed target coverage, explicit selection criteria, ranked detections, and post-search catalog reconciliation.
+The sample sizes, search coverage and adopted transit model limit the scientific interpretation. In particular, performance on the labeled set is conditional on primary-period recovery. The injection study tests two quiet Kepler baselines at one impact parameter. Establishing survey-level sensitivity and false-positive rates would require broader sampling of light curves, stellar properties, transit geometries and false-positive populations.
 
 The main methodological risks are detrending loss, aliases, inaccurate formal errors, fixed limb darkening, correlated noise, dilution, and selection bias. The current outputs expose several of these through diagnostic plots, alias scores, incomplete-test indicators, posterior diagnostics, and experiment counts. Further work could add centroid analysis, joint stellar-density constraints, eccentric models, transit timing variation, or TLS. None should be substituted for careful inspection of the present validation evidence.
 

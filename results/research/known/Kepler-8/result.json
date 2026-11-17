@@ -25,70 +25,95 @@
       "snr": 242.65294446511174
     }
   ],
+  "created_utc": "2026-11-17T10:31:41.229029+00:00",
+  "data_segments": [
+    {
+      "label": "KIC 6922244",
+      "filename": "data\\mastDownload\\Kepler\\kplr006922244_lc_Q111111111111111111\\kplr006922244-2009131105131_llc.fits",
+      "cadences": 473,
+      "start": 120.53979406206781,
+      "stop": 130.24611752841156,
+      "time_format": "bkjd"
+    },
+    {
+      "label": "KIC 6922244",
+      "filename": "data\\mastDownload\\Kepler\\kplr006922244_lc_Q111111111111111111\\kplr006922244-2009166043257_llc.fits",
+      "cadences": 1626,
+      "start": 131.51304557276308,
+      "stop": 164.98422386181483,
+      "time_format": "bkjd"
+    }
+  ],
   "vetting": {
     "metrics": {
-      "odd_even_sigma": 0.4895650667209823,
+      "odd_even_sigma": 0.08061459599928336,
       "secondary_sigma": 0.26313407247503623,
-      "depth_consistency_p": 3.9448847394290874e-15,
+      "secondary_depth": 5.924772834786651e-06,
+      "secondary_depth_error": 2.2516175039812603e-05,
+      "secondary_excess_sigma": 0.26313407247503623,
+      "secondary_depth_max": null,
+      "depth_consistency_p": 0.9828313423076539,
       "edge_core_ratio": 0.6036161864004488,
-      "central_duration_days": null,
+      "stellar_density": 0.65374,
+      "central_duration_days": 0.1623323449909605,
+      "event_depth_error_floor": 0.00042561246459910617,
       "individual_depths": [
         [
           0.007668299935921441,
-          7.314252982584029e-05
+          0.00043185159452229573
         ],
         [
           0.007963881836322462,
-          7.33688553256502e-05
+          0.00043188998478075594
         ],
         [
           0.008263620689927365,
-          8.03162234628471e-05
+          0.0004331243075301355
         ],
         [
           0.007600664548115255,
-          8.147579495709896e-05
+          0.0004333408302779887
         ],
         [
           0.007706646625388891,
-          7.45271345931224e-05
+          0.00043208825928597823
         ],
         [
           0.007741055145589204,
-          7.445206108684543e-05
+          0.00043207531683978984
         ],
         [
           0.007865555130247892,
-          7.435382717460752e-05
+          0.00043205840072568525
         ],
         [
           0.007618443639322514,
-          7.420186286805437e-05
+          0.00043203227480735157
         ],
         [
           0.007508243157968164,
-          8.126574402066305e-05
+          0.0004333013860736627
         ],
         [
           0.007408042602827791,
-          7.402221208623791e-05
+          0.00043200145590526124
         ],
         [
           0.007652079928827105,
-          7.391886402026459e-05
+          0.00043198375950974333
         ]
       ]
     },
     "flags": {
       "odd_even": true,
       "secondary": true,
-      "depth_consistency": false,
+      "depth_consistency": true,
       "shape": true,
-      "duration": null,
+      "duration": true,
       "detection": true
     },
-    "passed": false,
-    "incomplete": true
+    "passed": true,
+    "incomplete": false
   },
   "signals": [
     {
@@ -123,7 +148,9 @@
     "min_period": 0.5,
     "max_period": 15.0,
     "max_segments": 2,
-    "seed": 42
+    "seed": 42,
+    "stellar_radius": 1.486,
+    "stellar_radius_error": 0.062
   },
   "versions": {
     "numpy": "2.5.4",
@@ -134,42 +161,56 @@
   },
   "fit": {
     "period_days": {
-      "median": 3.5224860235852304,
-      "minus": 3.304427555361755e-05,
-      "plus": 3.22370392122906e-05
+      "median": 3.5224833933374544,
+      "minus": 2.9720831539403747e-05,
+      "plus": 2.9444993315141943e-05
     },
     "t0_days": {
-      "median": 121.11943579324675,
-      "minus": 0.0001986416922790113,
-      "plus": 0.00020622304312212236
+      "median": 121.11945706676835,
+      "minus": 0.0001888185557277211,
+      "plus": 0.0001886904387049526
     },
     "radius_ratio": {
-      "median": 0.09184483843656771,
-      "minus": 0.0007553034338825815,
-      "plus": 0.000770369006782165
+      "median": 0.09171070889554359,
+      "minus": 0.0006676882041352361,
+      "plus": 0.0007167078998776
     },
     "a_over_rstar": {
-      "median": 8.318867516842387,
-      "minus": 0.37381063563128514,
-      "plus": 0.37217387590244044
+      "median": 8.384085846501378,
+      "minus": 0.3480287746076467,
+      "plus": 0.34645803034392486
     },
     "impact": {
-      "median": 0.5364165403919815,
-      "minus": 0.06687363793586476,
-      "plus": 0.056824654159917665
+      "median": 0.5252368799263258,
+      "minus": 0.06354014272110475,
+      "plus": 0.05471421474024318
     },
     "offset": {
-      "median": 1.5349693632713412e-05,
-      "minus": 4.140919585999031e-06,
-      "plus": 4.399731380342319e-06
+      "median": 1.555938236912701e-05,
+      "minus": 3.754102526836044e-06,
+      "plus": 3.814105985322133e-06
+    },
+    "radius_earth": {
+      "median": 14.866454270045276,
+      "minus": 0.624467923557523,
+      "plus": 0.6279573294009939
     },
     "diagnostics": {
-      "converged": false,
-      "autocorrelation_time": null,
-      "acceptance_fraction": 0.4528958333333334,
-      "steps": 1500,
-      "burn": 500,
+      "converged": true,
+      "autocorrelation_time": [
+        31.660360409079544,
+        32.93794472008991,
+        71.03326178748661,
+        74.25264236026005,
+        76.36851838872128,
+        32.418910335254644
+      ],
+      "autocorrelation_basis": "Retained chain after burn-in",
+      "acceptance_fraction": 0.2291265625,
+      "steps": 20000,
+      "burn": 4000,
       "walkers": 32,
+      "moves": "Differential evolution and snooker",
       "assumptions": "Circular orbit; fixed limb darkening [0.3,0.2]; independent Gaussian noise; uniform bounded priors"
     }
   }

@@ -1,21 +1,21 @@
 # Delivery and validation ledger
 
-Updated 22 October 2026. This ledger separates implemented workflows from measured scientific outcomes.
+Updated 17 November 2026. The [report](report.md) describes the measured results and their scope.
 
 | Plan item | Implementation | Validation |
 |---|---|---|
-| PDCSAP archive access | `src/download.py`; mission/author filtering and download cache | Kepler-10 archive download succeeded |
+| PDCSAP archive access | `src/download.py` with mission/author filtering and a download cache | Processed three known Kepler hosts and WASP-18 using Kepler and TESS photometry |
 | Quality cleaning and detrending | `src/preprocess.py`; upward-only clipping, segment handling, protected transit mask | Downward-dip preservation test passed |
-| BLS, folding, aliases | `src/search.py`, pipeline plots | Synthetic 3-day signal recovered at 2.99943475 days; real Kepler-10 smoke test at 0.83771248 days |
-| Physical fit and uncertainties | Exposure-integrated batman, least squares, emcee, corner | Posterior generation tested; 300-step demo explicitly fails convergence check |
-| Radius conversion | Stellar radius/error arguments; posterior propagation | Formula implemented; measured host-specific inputs must be supplied |
-| Multiple known planets | Four-target manifest and batch driver | Kepler-10 completed; broader archive batch in progress; inspect before acceptance |
-| Vetting | Odd/even, secondary, duration, shape, event consistency | Synthetic unequal-depth binary rejected; labeled evaluation workflow supplied |
+| BLS, folding, aliases | `src/search.py` and pipeline plots | All four known periods agree with the archive within 0.03% |
+| Physical fit and uncertainties | Exposure-integrated batman, least squares, emcee and corner plots | Kepler-10, Kepler-17 and Kepler-8 pass with 20,000 steps and 4,000 burn-in. The saved WASP-18 fit passes with 10,000 steps and 2,000 burn-in. |
+| Radius and depth comparison | Catalog ratio and Earth-radius comparisons, fitted-profile depth diagnostic | Four hosts compared. The box explains most of the Kepler depth gap. The detrending response changes by less than 0.1% in the paired test. Ratios for Kepler-17, Kepler-8 and WASP-18 differ beyond their quoted intervals. |
+| Vetting | Event-depth error floor, parity and secondary tests, duration with measured density | All four known planets retained. The WASP-18 test uses a published TESS occultation bound. |
+| Labeled vetting | Period-aware matching and coverage by class | 20/20 analyzed, 11/20 period-matched. Retained 5/5 confirmed planets and rejected 4/6 catalog false positives among matches. |
 | Multiple signals | Iterative masking and BLS | Available in pipeline; additional detections require inspection |
-| Injection recovery | Pre-detrending injections, exact/alias separation, binomial intervals | 27 synthetic trials and 18 real-baseline trials completed; see report for limitations |
-| Blind search | 24 identifiers; frozen detections before catalog matching | Manifest supplied; completed coverage and crossmatch must be assessed |
-| Reproduction | CLI, six notebooks, dependency lock, figures and structured outputs | Four automated tests passed |
+| Injection recovery | Injections before both search passes, exact recovery, alias tracking and Wilson intervals | 360/360 recovered across two inspected Kepler baselines and nine bins per star, with 20 trials per bin |
+| Blind search | Frozen detections and post-search KOI crossmatch | 22/24 analyzed and crossmatched. The other two have no public Kepler long-cadence products. Ten unmatched signals meet the nominal detection criteria and are listed as unvetted. |
+| Reproduction | CLI, notebooks, figures and structured outputs | Eight automated tests passed. See [test output](test_output.txt). |
 
-Optional TLS, machine-learning classification, TTV, centroid analysis, and Streamlit are not included. They are extensions in the supplied plan, not prerequisites for the core pipeline.
+The evidence covers the observed quarters, target sample and tested injection grid. The vetting evaluation measures classification conditional on recovering the catalog period, and the injection results use a fixed impact parameter on two stars. Section 4 of the report discusses the limits on broader scientific claims.
 
-Acceptance of the full research project requires: completed multi-target archive comparisons; converged physical posteriors and literature agreement; a labeled sample containing both classes with quantified coverage; inspected quiet-star completeness across sufficient trials; and a completed blind search followed by catalog crossmatching. Software implementation and smoke tests alone do not demonstrate these success criteria. See generated output folders and the report for measured evidence.
+Review files include the [known-target comparison](../results/research/known_comparison.csv), [depth diagnostic](../results/research/depth_diagnostic.csv), [blind candidate list](../results/research/blind_candidates.csv), and [vetting metrics](../results/research/vetting_metrics.json).

@@ -1,5 +1,5 @@
-target,mission
-Kepler-10,Kepler
-Kepler-17,Kepler
-Kepler-8,Kepler
-WASP-18,TESS
+target,mission,stellar_density,stellar_radius,stellar_radius_error,secondary_depth_max
+Kepler-10,Kepler,1.068,1.065,0.009,
+Kepler-17,Kepler,1.421655,1.02,0.03,
+Kepler-8,Kepler,0.65374,1.486,0.062,
+WASP-18,TESS,0.795,1.319,0.062,0.000399

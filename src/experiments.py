@@ -5,9 +5,7 @@ import pandas as pd
 import lightkurve as lk
 import matplotlib.pyplot as plt
 from .fit import transit_model
-from .preprocess import clean_and_flatten
-from .search import search
-from .pipeline import run_pipeline, save_json
+from .pipeline import run_pipeline, save_json, search_transits
 
 
 def synthetic_curve(seed=42, period=3., radius_ratio=.08, days=27., noise=.0003):
@@ -34,8 +32,7 @@ def injection_recovery(curves, periods, radii, output='results/injection', repea
                     lc = curve.copy()
                     lc.flux *= transit_model(lc.time.value, [p, t0, rp, a, .3, 0.])
                     injected.append(lc)
-                _, flat = clean_and_flatten(injected, duration=.15)
-                c, _ = search(flat, min_period, max_period)
+                _, _, c, _ = search_transits(injected, .15, min_period, max_period)
                 # Strict period AND epoch requirement; harmonics are recorded separately.
                 phase_error = abs((c['t0']-t0+p/2)%p-p/2)
                 exact = abs(c['period']/p-1) < .01
@@ -60,7 +57,9 @@ def injection_recovery(curves, periods, radii, output='results/injection', repea
     fig.colorbar(im, ax=ax, label='Recovery fraction'); fig.tight_layout()
     fig.savefig(out/'completeness.png', dpi=150); plt.close(fig)
     save_json(out/'configuration.json', dict(seed=seed, repeats=repeats, stellar_radius=stellar_radius,
-        stellar_mass=stellar_mass, baseline=[dict(label=str(c.meta.get('LABEL',c.meta.get('OBJECT','unknown'))),
+        stellar_mass=stellar_mass, min_period=min_period, max_period=max_period,
+        baseline=[dict(label=str(c.meta.get('LABEL',c.meta.get('OBJECT','unknown'))),
+        filename=Path(c.meta.get('FILENAME', 'in-memory')).name,
         cadences=len(c), start=float(c.time.value.min()), stop=float(c.time.value.max())) for c in curves],
         caveat='Conditional on selected stars and fixed impact 0.3; injections before detrending.'))
     return table
@@ -73,8 +72,11 @@ def batch(manifest, output='results/batch', fit=False, **kwargs):
     for _, row in entries.iterrows():
         print(f'Analyzing {row.target}', flush=True)
         try:
+            inputs = {name: float(row[name]) for name in (
+                'stellar_density', 'stellar_radius', 'stellar_radius_error', 'secondary_depth_max'
+            ) if pd.notna(row.get(name))}
             results.append(run_pipeline(str(row.target), mission=str(row.get('mission','Kepler')),
-                                        output=output, fit=fit, **kwargs))
+                                        output=output, fit=fit, **(kwargs | inputs)))
         except Exception as exc:
             failures.append(dict(target=str(row.target), error=f'{type(exc).__name__}: {exc}'))
             print(f'Failed {row.target}: {exc}', flush=True)
@@ -94,15 +96,29 @@ def batch(manifest, output='results/batch', fit=False, **kwargs):
 def evaluate_labeled(results_file, labels_file, output='results/vetting_evaluation.json'):
     import json
     results = json.loads(Path(results_file).read_text())
-    labels = pd.read_csv(labels_file)  # target, disposition; no catalog features in vetting
-    predicted = pd.DataFrame([dict(target=r['target'], flagged=not r['vetting']['passed']) for r in results], columns=['target','flagged'])
-    merged = labels.merge(predicted, on='target', validate='one_to_one')
-    merged = merged[merged.disposition.isin(['CONFIRMED','FALSE POSITIVE'])]
+    labels = pd.read_csv(labels_file)
+    classes = ('CONFIRMED', 'FALSE POSITIVE')
+    labels = labels[labels.disposition.isin(classes)]
+    predicted = pd.DataFrame([
+        dict(target=r['target'], recovered_period=r.get('period'), flagged=not r['vetting']['passed'])
+        for r in results
+    ], columns=['target', 'recovered_period', 'flagged'])
+    analyzed = labels.merge(predicted, on='target', validate='one_to_one')
+    merged = analyzed
+    if 'catalog_period' in labels:
+        # A catalog disposition labels a signal, even on a single-KOI host.
+        merged = analyzed[(analyzed.recovered_period / analyzed.catalog_period - 1).abs() < .01]
     truth = merged.disposition.eq('FALSE POSITIVE')
     tp = int((truth & merged.flagged).sum()); fn = int((truth & ~merged.flagged).sum())
     fp = int((~truth & merged.flagged).sum()); tn = int((~truth & ~merged.flagged).sum())
     metrics = dict(true_positive=tp, false_negative=fn, false_positive=fp, true_negative=tn,
         false_positive_recall=tp/(tp+fn) if tp+fn else None,
-        planet_retention=tn/(tn+fp) if tn+fp else None, matched=len(merged), requested=len(labels))
+        planet_retention=tn/(tn+fp) if tn+fp else None, matched=len(merged), requested=len(labels),
+        analyzed=len(analyzed), coverage_by_class={
+            label: dict(requested=int(labels.disposition.eq(label).sum()),
+                        analyzed=int(analyzed.disposition.eq(label).sum()),
+                        matched=int(merged.disposition.eq(label).sum()))
+            for label in classes
+        })
     save_json(output, metrics)
     return metrics
