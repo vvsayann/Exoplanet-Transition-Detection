@@ -1,0 +1,14 @@
+{
+  "planets": {
+    "table": "pscomppars",
+    "columns": "pl_name,hostname,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_rade,pl_radeerr1,pl_radeerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_trandep,pl_trandur,st_rad,st_raderr1,st_raderr2,st_dens",
+    "retrieved_utc": "2026-11-17T10:21:05.650619+00:00",
+    "service": "https://exoplanetarchive.ipac.caltech.edu/TAP"
+  },
+  "koi": {
+    "table": "cumulative",
+    "columns": "kepid,kepoi_name,koi_disposition,koi_period,koi_depth,koi_duration,koi_prad",
+    "retrieved_utc": "2026-11-17T10:21:03.549142+00:00",
+    "service": "https://exoplanetarchive.ipac.caltech.edu/TAP"
+  }
+}
