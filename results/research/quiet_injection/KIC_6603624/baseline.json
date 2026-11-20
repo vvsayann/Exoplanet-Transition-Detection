@@ -1,0 +1,18 @@
+{
+  "target": "KIC 6603624",
+  "quarter": 1,
+  "archive_product": "https://stpubdata.s3.amazonaws.com/kepler/public/lightcurves/0066/006603624/kplr006603624-2009166043257_llc.fits",
+  "stellar_source": "https://doi.org/10.1088/0067-0049/214/2/27",
+  "stellar_mass_solar": 1.09,
+  "stellar_radius_solar": 1.181,
+  "input_cadences": 1626,
+  "usable_cadences": 1258,
+  "baseline_days": 33.47149305594212,
+  "normalized_mad_ppm": 34.906089782714844,
+  "detrended_mad_ppm": 30.35506103165095,
+  "median_flux_error_ppm": 13.4682978339772,
+  "uninjected_best_period": 0.6427504578599702,
+  "uninjected_best_depth_ppm": 17.77497307949941,
+  "uninjected_best_formal_snr": 11.556955880169221,
+  "uninjected_snr_scaled_by_mad": 5.127728904447126
+}
