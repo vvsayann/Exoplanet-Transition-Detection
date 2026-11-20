@@ -1,0 +1,15 @@
+C:\Users\yoboy\Desktop\Exoplanet-Transition-Detection\.venv-etd\Lib\site-packages\lightkurve\prf\__init__.py:7: UserWarning: Warning: the tpfmodel submodule is not available without oktopus installed, which requires a current version of autograd. See #1452 for details.
+  warnings.warn(
+test_truncated_fits_preserved_for_redownload (test_download.CacheTests.test_truncated_fits_preserved_for_redownload) ... ok
+test_valid_fits_retained (test_download.CacheTests.test_valid_fits_retained) ... ok
+test_binary_odd_even (test_pipeline.PipelineTests.test_binary_odd_even) ... ok
+test_downward_dips_preserved (test_pipeline.PipelineTests.test_downward_dips_preserved) ... ok
+test_period_and_uncertainties (test_pipeline.PipelineTests.test_period_and_uncertainties) ... ok
+test_secondary_depth_limit_still_rejects_deep_eclipse (test_pipeline.PipelineTests.test_secondary_depth_limit_still_rejects_deep_eclipse) ... ok
+test_short_baseline_rejected (test_pipeline.PipelineTests.test_short_baseline_rejected) ... ok
+test_sparse_likelihood_matches_full_exposure_integrated_model (test_pipeline.PipelineTests.test_sparse_likelihood_matches_full_exposure_integrated_model) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.616s
+
+OK

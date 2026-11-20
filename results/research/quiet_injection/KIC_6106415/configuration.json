@@ -1,0 +1,18 @@
+{
+  "seed": 6106415,
+  "repeats": 20,
+  "stellar_radius": 1.213,
+  "stellar_mass": 1.078,
+  "min_period": 0.5,
+  "max_period": 8.0,
+  "baseline": [
+    {
+      "label": "KIC 6106415",
+      "filename": "kplr006106415-2009166043257_llc.fits",
+      "cadences": 1626,
+      "start": 131.51283007007441,
+      "stop": 164.98416977502347
+    }
+  ],
+  "caveat": "Conditional on selected stars and fixed impact 0.3; injections before detrending."
+}

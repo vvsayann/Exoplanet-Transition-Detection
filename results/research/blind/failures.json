@@ -1,0 +1,20 @@
+[
+  {
+    "target": "KIC 2694497",
+    "error": "ValueError: No Kepler Kepler light curves for KIC 2694497",
+    "archive_verification": {
+      "source": "https://stpubdata.s3.amazonaws.com/?list-type=2&prefix=kepler/public/lightcurves/0026/002694497/",
+      "public_long_cadence_products": 0,
+      "checked_utc_date": "2026-11-17"
+    }
+  },
+  {
+    "target": "KIC 3112389",
+    "error": "ValueError: No Kepler Kepler light curves for KIC 3112389",
+    "archive_verification": {
+      "source": "https://stpubdata.s3.amazonaws.com/?list-type=2&prefix=kepler/public/lightcurves/0031/003112389/",
+      "public_long_cadence_products": 0,
+      "checked_utc_date": "2026-11-17"
+    }
+  }
+]

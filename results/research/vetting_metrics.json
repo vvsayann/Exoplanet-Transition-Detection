@@ -1,0 +1,23 @@
+{
+  "true_positive": 4,
+  "false_negative": 2,
+  "false_positive": 0,
+  "true_negative": 5,
+  "false_positive_recall": 0.6666666666666666,
+  "planet_retention": 1.0,
+  "matched": 11,
+  "requested": 20,
+  "analyzed": 20,
+  "coverage_by_class": {
+    "CONFIRMED": {
+      "requested": 10,
+      "analyzed": 10,
+      "matched": 5
+    },
+    "FALSE POSITIVE": {
+      "requested": 10,
+      "analyzed": 10,
+      "matched": 6
+    }
+  }
+}
